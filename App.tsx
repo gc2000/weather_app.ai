@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { getWeatherByCity, getWeatherByCoords } from './services/weatherService';
 import { generateWeatherInsight } from './services/geminiService';
 import { WeatherData, GeminiInsight } from './types';
-import { Search, MapPin, Wind, Droplets, Thermometer, Loader2, Sparkles, Navigation, Cloud, Key } from 'lucide-react';
+import { Search, MapPin, Wind, Droplets, Thermometer, Loader2, Sparkles, Navigation, Cloud } from 'lucide-react';
 
 const App: React.FC = () => {
-  // Use environment variable if available, otherwise check local storage, or default to empty
-  const [apiKey, setApiKey] = useState<string>(() => {
-    return process.env.OPENWEATHER_API_KEY || localStorage.getItem('skygen_ow_key') || '';
-  });
+  const apiKey = process.env.OPENWEATHER_API_KEY || '072b5fb1fa34faa84a90bd9c35785838';
   
   const [city, setCity] = useState('');
   const [weather, setWeather] = useState<WeatherData | null>(null);
@@ -16,26 +13,12 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tempApiKey, setTempApiKey] = useState('');
-
-  const saveApiKey = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (tempApiKey.trim()) {
-      setApiKey(tempApiKey.trim());
-      localStorage.setItem('skygen_ow_key', tempApiKey.trim());
-    }
-  };
-
-  const clearApiKey = () => {
-    setApiKey('');
-    localStorage.removeItem('skygen_ow_key');
-    setWeather(null);
-    setInsight(null);
-    setCity('');
-  };
 
   const fetchWeather = async (searchCity: string) => {
-    if (!apiKey) return;
+    if (!apiKey) {
+      setError("Configuration Error: OPENWEATHER_API_KEY is missing.");
+      return;
+    }
     setLoading(true);
     setError(null);
     setInsight(null);
@@ -45,18 +28,16 @@ const App: React.FC = () => {
     } catch (err: any) {
       setError(err.message || "Failed to fetch weather");
       setWeather(null);
-      // If unauthorized, allow user to reset key
-      if (err.message.includes("Invalid OpenWeather API Key")) {
-        // Optional: auto-clear key if invalid? 
-        // For now just showing error is enough, user can manually reset.
-      }
     } finally {
       setLoading(false);
     }
   };
 
   const fetchWeatherByLocation = () => {
-    if (!apiKey) return;
+    if (!apiKey) {
+       setError("Configuration Error: OPENWEATHER_API_KEY is missing.");
+       return;
+    }
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser");
       return;
@@ -71,7 +52,6 @@ const App: React.FC = () => {
         try {
           const data = await getWeatherByCoords(position.coords.latitude, position.coords.longitude, apiKey);
           setWeather(data);
-          // Reverse geocode or just use the name returned by API
           if (data.name) setCity(data.name);
         } catch (err: any) {
           setError(err.message || "Failed to fetch weather from location");
@@ -101,76 +81,16 @@ const App: React.FC = () => {
       setInsight(data);
     } catch (err) {
       console.error(err);
-      // Gemini failures shouldn't crash the app, just log it
     } finally {
       setAiLoading(false);
     }
   };
-
-  // If no API Key is set, show the setup screen
-  if (!apiKey) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="w-full max-w-md bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl shadow-2xl p-8 animate-fade-in">
-          <div className="flex justify-center mb-6">
-            <div className="p-4 bg-sky-500/20 rounded-full">
-              <Cloud className="w-12 h-12 text-sky-400" />
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-center text-white mb-2">Welcome to SkyGen</h1>
-          <p className="text-slate-400 text-center mb-6 text-sm">
-            To get started, please enter your OpenWeatherMap API Key. 
-            <br />
-            <span className="text-xs opacity-70">(It will be stored locally in your browser)</span>
-          </p>
-          
-          <form onSubmit={saveApiKey} className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1 ml-1">API KEY</label>
-              <div className="relative">
-                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input
-                  type="password"
-                  required
-                  placeholder="Paste your API key here..."
-                  className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500 text-slate-100 placeholder-slate-600 transition-all"
-                  value={tempApiKey}
-                  onChange={(e) => setTempApiKey(e.target.value)}
-                />
-              </div>
-            </div>
-            <button
-              type="submit"
-              className="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-xl font-medium transition-colors shadow-lg shadow-sky-900/20"
-            >
-              Start App
-            </button>
-          </form>
-          
-          <div className="mt-6 text-center">
-             <a href="https://openweathermap.org/api" target="_blank" rel="noreferrer" className="text-xs text-sky-400 hover:text-sky-300 underline">
-               Don't have a key? Get one here
-             </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       
       <main className="w-full max-w-md bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl shadow-2xl overflow-hidden relative">
         
-        {/* Settings / API Key Reset */}
-        <button 
-          onClick={clearApiKey}
-          className="absolute top-4 right-4 p-2 text-slate-500 hover:text-red-400 transition-colors z-10"
-          title="Reset API Key"
-        >
-          <Key className="w-4 h-4" />
-        </button>
-
         {/* Header / Search */}
         <div className="p-6 border-b border-slate-700/50">
           <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-500 mb-6 text-center">
