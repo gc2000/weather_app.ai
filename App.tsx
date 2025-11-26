@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { getWeatherByCity, getWeatherByCoords } from './services/weatherService';
 import { generateWeatherInsight } from './services/geminiService';
 import { WeatherData, GeminiInsight } from './types';
-import { Search, MapPin, Wind, Droplets, Thermometer, Loader2, Sparkles, Navigation, Cloud } from 'lucide-react';
+import { Search, MapPin, Wind, Droplets, Thermometer, Loader2, Sparkles, Navigation, Cloud, AlertTriangle } from 'lucide-react';
 
 const App: React.FC = () => {
-  const apiKey = process.env.OPENWEATHER_API_KEY || '';
-  
+  // Directly read from Environment Variables (Vercel)
+  const apiKey = process.env.OPENWEATHER_API_KEY;
+
   const [city, setCity] = useState('');
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [insight, setInsight] = useState<GeminiInsight | null>(null);
@@ -15,10 +16,8 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchWeather = async (searchCity: string) => {
-    if (!apiKey) {
-      setError("Configuration Error: OPENWEATHER_API_KEY is missing.");
-      return;
-    }
+    if (!apiKey) return;
+
     setLoading(true);
     setError(null);
     setInsight(null);
@@ -34,10 +33,8 @@ const App: React.FC = () => {
   };
 
   const fetchWeatherByLocation = () => {
-    if (!apiKey) {
-       setError("Configuration Error: OPENWEATHER_API_KEY is missing.");
-       return;
-    }
+    if (!apiKey) return;
+
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser");
       return;
@@ -86,9 +83,38 @@ const App: React.FC = () => {
     }
   };
 
+  // 1. Critical Config Check: If API key is missing from Env Vars
+  if (!apiKey) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-900 text-slate-100 font-sans">
+        <div className="max-w-md w-full bg-slate-800 p-8 rounded-2xl border border-red-500/20 shadow-2xl text-center">
+          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-8 h-8 text-red-500" />
+          </div>
+          <h1 className="text-2xl font-bold mb-4">Configuration Error</h1>
+          <p className="text-slate-400 mb-6">
+            The <code>OPENWEATHER_API_KEY</code> environment variable is missing.
+          </p>
+          <div className="bg-slate-900/50 p-4 rounded-lg text-left text-sm font-mono text-slate-300 mb-6 border border-slate-700">
+            1. Go to Vercel Project Settings<br/>
+            2. Click "Environment Variables"<br/>
+            3. Add <strong>OPENWEATHER_API_KEY</strong><br/>
+            4. Redeploy your app
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors text-sm font-medium"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Main App Interface
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 relative">
       <main className="w-full max-w-md bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-3xl shadow-2xl overflow-hidden relative">
         
         {/* Header / Search */}
