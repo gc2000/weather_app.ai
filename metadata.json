@@ -1,0 +1,7 @@
+{
+  "name": "SkyGen Weather",
+  "description": "A smart weather application powered by OpenWeather and Gemini AI.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
