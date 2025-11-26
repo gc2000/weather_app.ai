@@ -5,7 +5,7 @@ import { WeatherData, GeminiInsight } from './types';
 import { Search, MapPin, Wind, Droplets, Thermometer, Loader2, Sparkles, Navigation, Cloud } from 'lucide-react';
 
 const App: React.FC = () => {
-  const apiKey = process.env.OPENWEATHER_API_KEY || '072b5fb1fa34faa84a90bd9c35785838';
+  const apiKey = process.env.OPENWEATHER_API_KEY || '';
   
   const [city, setCity] = useState('');
   const [weather, setWeather] = useState<WeatherData | null>(null);
